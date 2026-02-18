@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procom 蔵書検索</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 8px;
+        }
+
+        input[type="text"] {
+            max-width: 100%;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Procom 蔵書検索</h1>
+    </header>
+    <main>
+        <section>
+            <div>
+                <button id="simpleSearchBtn" type="button">簡易検索</button>
+                <button id="detailSearchBtn" type="button">詳細検索</button>
+            </div>
+            <form id="searchForm">
+                <div id="simpleSearchFields">
+                    <input type="text" id="simpleQuery" placeholder="キーワード" aria-label="キーワード">
+                </div>
+                <div id="detailSearchFields" style="display:none;">
+                    <input type="text" id="titleQuery" placeholder="タイトル" aria-label="タイトル">
+                    <input type="text" id="authorQuery" placeholder="著者" aria-label="著者">
+                    <input type="text" id="publisherQuery" placeholder="出版社" aria-label="出版社">
+                    <input type="text" id="isbnQuery" placeholder="ISBN" aria-label="ISBN" pattern="[0-9A-Za-z\-]+">
+                </div>
+                <button type="submit">検索</button>
+            </form>
+        </section>
+        <p><a href="books.html">本一覧</a></p>
+    </main>
+    <script>
+    // 本データをAPIから取得しsessionStorageに保存
+    const booksApiUrl = "https://script.google.com/macros/s/AKfycbyexjWaW7iNgKA2svy73mA2y3wG1B-GHsUYhMpOSIv_qn0sDsZuPIodmRgHNNnEhQJH/exec";
+    if (!sessionStorage.getItem('booksData')) {
+        fetch(booksApiUrl)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.json();
+            })
+            .then(data => {
+                sessionStorage.setItem('booksData', JSON.stringify(data));
+            })
+            .catch(error => {
+                console.error('本データの取得に失敗:', error);
+            });
+    }
+    // 検索フォーム切替
+    const simpleBtn = document.getElementById('simpleSearchBtn');
+    const detailBtn = document.getElementById('detailSearchBtn');
+    const simpleFields = document.getElementById('simpleSearchFields');
+    const detailFields = document.getElementById('detailSearchFields');
+    simpleBtn.addEventListener('click', () => {
+        simpleFields.style.display = '';
+        detailFields.style.display = 'none';
+    });
+    detailBtn.addEventListener('click', () => {
+        simpleFields.style.display = 'none';
+        detailFields.style.display = '';
+    });
+    // 検索フォーム送信時にresult.htmlへ遷移
+    document.getElementById('searchForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        let params = new URLSearchParams();
+        if (simpleFields.style.display !== 'none') {
+            const q = document.getElementById('simpleQuery').value;
+            params.set('q', q);
+        } else {
+            const title = document.getElementById('titleQuery').value;
+            const author = document.getElementById('authorQuery').value;
+            const publisher = document.getElementById('publisherQuery').value;
+            const isbn = document.getElementById('isbnQuery').value;
+            if (title) params.set('title', title);
+            if (author) params.set('author', author);
+            if (publisher) params.set('publisher', publisher);
+            if (isbn) params.set('isbn', isbn);
+        }
+        window.location.href = 'result.html?' + params.toString();
+    });
+    </script>
+</body>
+
+</html>

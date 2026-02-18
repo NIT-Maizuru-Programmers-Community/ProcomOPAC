@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>検索結果 | Procom 蔵書検索</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 8px;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        #search-conditions {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Procom 蔵書検索</h1>
+    </header>
+    <main>
+        <p><a href="index.html">ホームへ戻る</a></p>
+        <h2>検索結果</h2>
+        <div id="search-conditions"></div>
+        <div id="search-results"></div>
+    </main>
+    <script>
+    // 検索条件の表示
+    function escapeHTML(str) {
+        return str.replace(/[&<>'"]/g, function (m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '\'': '&#39;', '"': '&quot;' }[m];
+        });
+    }
+    const params = new URLSearchParams(window.location.search);
+    let cond = [];
+    if (params.get('q')) cond.push('キーワード: ' + escapeHTML(params.get('q')));
+    if (params.get('title')) cond.push('タイトル: ' + escapeHTML(params.get('title')));
+    if (params.get('author')) cond.push('著者: ' + escapeHTML(params.get('author')));
+    if (params.get('publisher')) cond.push('出版社: ' + escapeHTML(params.get('publisher')));
+    if (params.get('isbn')) cond.push('ISBN: ' + escapeHTML(params.get('isbn')));
+    document.getElementById('search-conditions').textContent = cond.length ? '検索条件: ' + cond.join(' / ') : '検索条件なし';
+
+    // sessionStorageから本データを取得して検索・表示
+    const resultsDiv = document.getElementById('search-results');
+    let allBooks = [];
+    resultsDiv.textContent = '検索中...';
+    const booksDataStr = sessionStorage.getItem('booksData');
+    if (booksDataStr) {
+        try {
+            allBooks = JSON.parse(booksDataStr);
+        } catch (e) {
+            allBooks = [];
+        }
+        searchAndDisplay();
+    } else {
+        resultsDiv.textContent = 'データ取得エラー：本データがありません。index.htmlから遷移してください。';
+    }
+
+    // 検索条件でフィルタして表示
+    function searchAndDisplay() {
+        // 検索条件でフィルタ
+        let filtered = allBooks.filter(book => {
+            // 簡易検索
+            if (params.get('q')) {
+                const q = params.get('q').toLowerCase();
+                return (
+                    (book.title && String(book.title).toLowerCase().includes(q)) ||
+                    (book.author && String(book.author).toLowerCase().includes(q)) ||
+                    (book.publisher && String(book.publisher).toLowerCase().includes(q)) ||
+                    (book.isbn && String(book.isbn).toLowerCase().includes(q))
+                );
+            }
+            // 詳細検索（部分一致・OR条件）
+            let matched = false;
+            if (params.get('title')) matched = matched || (book.title && String(book.title).includes(params.get('title')));
+            if (params.get('author')) matched = matched || (book.author && String(book.author).includes(params.get('author')));
+            if (params.get('publisher')) matched = matched || (book.publisher && String(book.publisher).includes(params.get('publisher')));
+            if (params.get('isbn')) matched = matched || (book.isbn && String(book.isbn).includes(params.get('isbn')));
+            if (params.get('title') || params.get('author') || params.get('publisher') || params.get('isbn')) {
+                return matched;
+            }
+            return false;
+        });
+        if (filtered.length === 0) {
+            resultsDiv.textContent = '該当する本が見つかりませんでした。';
+        } else {
+            const ul = document.createElement('ul');
+            ul.style.listStyle = 'none';
+            ul.style.padding = '0';
+            filtered.forEach(book => {
+                const li = document.createElement('li');
+                li.style.display = 'flex';
+                li.style.alignItems = 'center';
+                li.style.marginBottom = '1em';
+
+                // 画像
+                const img = document.createElement('img');
+                img.src = book.image || book.img || './img/NoImage.png';
+                img.alt = book.title ? `${book.title} の表紙` : '本の表紙';
+                img.width = 60;
+                img.height = 80;
+                img.style.objectFit = 'cover';
+                img.style.marginRight = '1em';
+
+                // 情報
+                const infoDiv = document.createElement('div');
+                const titleDiv = document.createElement('div');
+                titleDiv.textContent = book.title || 'タイトル不明';
+                titleDiv.style.fontWeight = 'bold';
+                const authorDiv = document.createElement('div');
+                authorDiv.textContent = book.author ? `著者: ${book.author}` : '';
+                const publisherDiv = document.createElement('div');
+                publisherDiv.textContent = book.publisher ? `出版社: ${book.publisher}` : '';
+                infoDiv.appendChild(titleDiv);
+                infoDiv.appendChild(authorDiv);
+                infoDiv.appendChild(publisherDiv);
+
+                li.appendChild(img);
+                li.appendChild(infoDiv);
+                ul.appendChild(li);
+            });
+            resultsDiv.innerHTML = '';
+            resultsDiv.appendChild(ul);
+        }
+    }
+    </script>
+    </main>
+</body>
+
+</html>
