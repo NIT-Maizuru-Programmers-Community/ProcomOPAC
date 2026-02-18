@@ -26,6 +26,10 @@
 </head>
 
 <body>
+    <div id="loading-message" style="position:fixed;top:0;left:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.8);z-index:9999;">
+        データを取得中...
+    </div>
+    
     <header>
         <h1>Procom 蔵書検索</h1>
     </header>
@@ -50,26 +54,27 @@
         </section>
         <p><a href="books.html">本一覧</a></p>
     </main>
-    <div id="loading-message" style="position:fixed;top:0;left:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.8);z-index:9999;">
-        データを取得中...
-    </div>
-    <div id="data-container"></div>
     <script>
     // 本データをAPIから取得しsessionStorageに保存
     const booksApiUrl = "https://script.google.com/macros/s/AKfycbwgeTeTRzSyHyHvEyXKsZzGqvpdP4LV-4L9IAOXJ74nnVD_gdY8ccGKYf_qt0YH-4sc/exec";
-    if (!sessionStorage.getItem('booksData')) {
-        fetch(booksApiUrl)
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.json();
-            })
-            .then(data => {
-                sessionStorage.setItem('booksData', JSON.stringify(data));
-            })
-            .catch(error => {
-                console.error('本データの取得に失敗:', error);
-            });
-    }
+    
+    // ページを開いた時に毎回データを取得
+    const loadingMessage = document.getElementById('loading-message');
+    
+    // データ取得処理
+    fetch(booksApiUrl)
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            sessionStorage.setItem('booksData', JSON.stringify(data));
+            loadingMessage.style.display = 'none';
+        })
+        .catch(error => {
+            console.error('本データの取得に失敗:', error);
+            loadingMessage.style.display = 'none';
+        });
     // 検索フォーム切替
     const simpleBtn = document.getElementById('simpleSearchBtn');
     const detailBtn = document.getElementById('detailSearchBtn');
@@ -102,14 +107,6 @@
         }
         window.location.href = 'result.html?' + params.toString();
     });
-    // データ取得関数例
-    async function fetchData() {
-        const response = await fetch('https://nit-maizuru-programmers-community.github.io/ProcomOPAC/data.json');
-        const data = await response.json();
-        document.getElementById('data-container').textContent = JSON.stringify(data, null, 2);
-        document.getElementById('loading-message').style.display = 'none';
-    }
-    window.onload = fetchData;
     </script>
 </body>
 
