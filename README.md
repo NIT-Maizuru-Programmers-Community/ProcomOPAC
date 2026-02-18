@@ -13,7 +13,7 @@ https://nit-maizuru-programmers-community.github.io/ProcomOPAC/
 - img/NoImage.png：書影がない場合の画像
 
 ## 蔵書データ
-以下のGoogleスプレッドシートから編集ができます。
+以下のGoogleスプレッドシートから編集ができます。（学校アカウント必須）
 
 https://docs.google.com/spreadsheets/d/1cu5c3f0Y2tls1uO66w4vjMQq-IXg98ICY20SulPXCZs/edit?usp=sharing
 
