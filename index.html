@@ -55,23 +55,31 @@
         <p><a href="books.html">本一覧</a></p>
     </main>
     <script>
+// --- 蔵書データ取得・キャッシュ処理 ---
+// Google Apps ScriptのAPIエンドポイント
 const booksApiUrl = "https://script.google.com/macros/s/AKfycbwgeTeTRzSyHyHvEyXKsZzGqvpdP4LV-4L9IAOXJ74nnVD_gdY8ccGKYf_qt0YH-4sc/exec";
+// ローディングメッセージのDOM取得
 const loadingMessage = document.getElementById('loading-message');
 
+// ローディング表示を出す
 function showLoading() {
   loadingMessage.style.display = 'flex';
 }
+// ローディング表示を消す
 function hideLoading() {
   loadingMessage.style.display = 'none';
 }
 
+// 蔵書データを取得（初回のみAPI、2回目以降はsessionStorageから即座に取得）
 function getBooksData() {
   const cached = sessionStorage.getItem('booksData');
   if (cached) {
+    // キャッシュがあればローディング非表示＆即座に返す
     hideLoading();
     // 必要ならここでデータを使う
     return Promise.resolve(JSON.parse(cached));
   } else {
+    // キャッシュがなければAPIから取得し、取得中はローディング表示
     showLoading();
     return fetch(booksApiUrl)
       .then(response => {
@@ -79,11 +87,13 @@ function getBooksData() {
         return response.json();
       })
       .then(data => {
+        // 取得したデータをキャッシュ
         sessionStorage.setItem('booksData', JSON.stringify(data));
         hideLoading();
         return data;
       })
       .catch(error => {
+        // エラー時もローディング非表示
         console.error('本データの取得に失敗:', error);
         hideLoading();
         return null;
@@ -91,30 +101,39 @@ function getBooksData() {
   }
 }
 
-// ページ読み込み時に実行
+// ページ読み込み時に蔵書データ取得を実行
 getBooksData();
 
-// 検索フォーム切替
+// --- 検索フォームUI切替処理 ---
 const simpleBtn = document.getElementById('simpleSearchBtn');
 const detailBtn = document.getElementById('detailSearchBtn');
 const simpleFields = document.getElementById('simpleSearchFields');
 const detailFields = document.getElementById('detailSearchFields');
+// 「簡易検索」ボタン押下時の表示切替
 simpleBtn.addEventListener('click', () => {
     simpleFields.style.display = '';
     detailFields.style.display = 'none';
 });
+// 「詳細検索」ボタン押下時の表示切替
 detailBtn.addEventListener('click', () => {
     simpleFields.style.display = 'none';
     detailFields.style.display = '';
 });
-// 検索フォーム送信時にresult.htmlへ遷移
+
+// --- 検索フォーム送信時の遷移処理 ---
+// 検索条件をURLパラメータにしてresult.htmlへ遷移
+// 必要なパラメータのみセットすることでURLを簡潔に保つ
+// result.html側でパラメータを受け取り検索処理を行う
+
 document.getElementById('searchForm').addEventListener('submit', function(e) {
     e.preventDefault();
     let params = new URLSearchParams();
     if (simpleFields.style.display !== 'none') {
+        // 簡易検索時のパラメータ
         const q = document.getElementById('simpleQuery').value;
         params.set('q', q);
     } else {
+        // 詳細検索時のパラメータ
         const title = document.getElementById('titleQuery').value;
         const author = document.getElementById('authorQuery').value;
         const publisher = document.getElementById('publisherQuery').value;
@@ -124,6 +143,7 @@ document.getElementById('searchForm').addEventListener('submit', function(e) {
         if (publisher) params.set('publisher', publisher);
         if (isbn) params.set('isbn', isbn);
     }
+    // 検索結果ページへ遷移
     window.location.href = 'result.html?' + params.toString();
 });
 </script>
